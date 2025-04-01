@@ -15,11 +15,18 @@ export const SocketProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const { authUser } = useAuthContext();
 
+  const isDevelopment = import.meta.env.DEV; // true in development, false in production
+
   useEffect(() => {
     if (authUser) {
-      const socket = io("http://localhost:8000", {
-        query: { userId: authUser._id },
-      });
+      const socket = io(
+        isDevelopment
+          ? "http://localhost:8000"
+          : "https://chat-app-v2-gpwy.onrender.com",
+        {
+          query: { userId: authUser._id },
+        }
+      );
       setSocket(socket);
 
       // socket.on() is used to listen to the events. Can be used both on the server and client
