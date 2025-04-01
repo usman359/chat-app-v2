@@ -1,5 +1,6 @@
 import Conversation from "../models/conersation.model.js";
 import Message from "../models/message.model.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -8,7 +9,7 @@ export const sendMessage = async (req, res) => {
     const senderId = req.user._id;
 
     if (!message || !receiverId) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
     let conversation = await Conversation.findOne({
@@ -33,6 +34,11 @@ export const sendMessage = async (req, res) => {
     }
 
     // SOCKET IO FUNCTIONALITY
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      // io.to(<socketId>).emit() is used to emit events to a specific client
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
 
     // this will run in parallel
     await Promise.all([conversation.save(), newMessage.save()]);
