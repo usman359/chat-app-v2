@@ -7,17 +7,17 @@ export const signup = async (req, res) => {
     const { fullName, username, password, confirmPassword, gender } = req.body;
 
     if (!fullName || !username || !password || !confirmPassword || !gender) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
+      return res.status(400).json({ error: "Passwords do not match" });
     }
 
     const user = await User.findOne({ username });
 
     if (user) {
-      return res.status(400).json({ message: "Username already exists" });
+      return res.status(400).json({ error: "Username already exists" });
     }
 
     // HASH PASSWORD
@@ -59,7 +59,7 @@ export const login = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
     const user = await User.findOne({ username });
@@ -70,7 +70,7 @@ export const login = async (req, res) => {
     );
 
     if (!user || !isPasswordMatch) {
-      return res.status(400).json({ message: "Invalid username or password" });
+      return res.status(400).json({ error: "Invalid username or password" });
     }
 
     generateToken(user._id, res);

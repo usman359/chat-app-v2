@@ -1,10 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Messages from "./Messages";
 import MessageInput from "./MessageInput";
 import { MessageSquare } from "lucide-react";
+import useConversation from "../../zustand/useConversation";
 
 const MessageContainer = () => {
-  const noChatSelected = true;
+  const { selectedConversation, setSelectedConversation } = useConversation();
+
+  useEffect(() => {
+    // cleanup function (unmounts)
+    return () => setSelectedConversation(null);
+  }, [setSelectedConversation]);
+
+  const noChatSelected = !selectedConversation;
   return (
     <div className="md:min-w-[450px] flex flex-col">
       {noChatSelected ? (
@@ -14,7 +22,10 @@ const MessageContainer = () => {
           {/* Header */}
           <div className="bg-slate-500 px-4 py-2 mb-2">
             <span className="label-text">
-              To: <span className="text-gray-900 font-bold">John Doe</span>
+              To:{" "}
+              <span className="text-gray-900 font-bold">
+                {selectedConversation.fullName}
+              </span>
             </span>
           </div>
 
@@ -34,7 +45,7 @@ const NoChatSelected = () => {
       <div className="px-4 text-center sm:text-lg md:text-xl text-gray-200 font-semibold flex flex-col items-center gap-2">
         <p>Welcome 👋 John Doe ❄️</p>
         <p>Select a chat to start messaging</p>
-        <MessageSquare className="size-12 md:size-20 text-center" />
+        <MessageSquare className="size-14 text-center" />
       </div>
     </div>
   );
