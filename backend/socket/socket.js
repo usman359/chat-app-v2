@@ -18,6 +18,8 @@ export const getReceiverSocketId = (receiverId) => {
 
 const userSocketMap = {};
 
+let onlineUsers = [];
+
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
 
@@ -38,6 +40,45 @@ io.on("connection", (socket) => {
 
     // Emit updated online users list
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+
+  // Listen for when a user comes online
+  socket.on("setup", (userId) => {
+    socket.join(userId);
+    onlineUsers.push(userId);
+    io.emit("onlineUsers", onlineUsers);
+  });
+
+  // Listen for when a user starts typing
+  socket.on("typing", ({ recipientId, senderId }) => {
+    console.log("Typing:", { recipientId, senderId });
+    const recipientSocketId = userSocketMap[recipientId];
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit("typing", { senderId });
+    }
+  });
+
+  // Listen for when a user stops typing
+  socket.on("stopTyping", ({ recipientId, senderId }) => {
+    console.log("Stop Typing:", { recipientId, senderId });
+    const recipientSocketId = userSocketMap[recipientId];
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit("stopTyping", { senderId });
+    }
+  });
+
+  // Listen for when a new message is sent
+  socket.on("sendMessage", (message) => {
+    const recipientSocketId = userSocketMap[message.recipientId];
+    if (recipientSocketId) {
+      socket.to(recipientSocketId).emit("newMessage", message);
+    }
+  });
+
+  // Listen for when a user disconnects
+  socket.on("disconnect", () => {
+    onlineUsers = onlineUsers.filter((user) => user !== socket.id);
+    io.emit("onlineUsers", onlineUsers);
   });
 });
 

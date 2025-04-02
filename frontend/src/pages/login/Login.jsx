@@ -34,10 +34,10 @@ const Login = () => {
   };
 
   return (
-    <div className="flex max-h-screen items-center justify-center p-8 bg-gray-400 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-0 border border-gray-700 rounded-xl shadow-md">
-      <div className="w-full max-w-sm">
-        <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-8">
-          Welcome to <span className="text-blue-500">ChatApp</span>
+    <div className="flex w-[480px] max-h-screen items-center justify-center p-8 bg-gray-400 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-0 border border-gray-700 rounded-xl shadow-md">
+      <div className="w-full max-w-[480px]">
+        <h1 className="text-4xl font-bold text-center text-white mb-8">
+          <span className="text-blue-500">ChatApp</span> Login
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -110,7 +110,7 @@ const Login = () => {
             )}
           </button>
 
-          <p className="text-center text-gray-400">
+          <p className="text-center text-gray-300">
             Don&apos;t have an account?{" "}
             <Link
               to="/signup"
