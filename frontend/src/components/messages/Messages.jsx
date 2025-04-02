@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import Message from "./Message";
+import { useSocketContext } from "../../context/SocketContext";
 import useGetMessages from "../../hooks/useGetMessages";
-import MessageSkeleton from "../skeletons/MessageSkeleton";
 import useListenMessages from "../../hooks/useListenMessages";
 import useConversation from "../../zustand/useConversation";
-import { useSocketContext } from "../../context/SocketContext";
+import MessageSkeleton from "../skeletons/MessageSkeleton";
+import Message from "./Message";
 
 const Messages = () => {
   const { messages, loading } = useGetMessages();
@@ -12,45 +12,40 @@ const Messages = () => {
   const { socket } = useSocketContext();
   const { selectedConversation } = useConversation();
   const [isTyping, setIsTyping] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
 
   useListenMessages();
 
   useEffect(() => {
-    if (!socket) return;
-
     const handleTyping = ({ senderId }) => {
+      console.log("Typing event received from:", senderId);
+      console.log("Selected conversation:", selectedConversation?._id);
       if (selectedConversation?._id === senderId) {
         setIsTyping(true);
-        setIsVisible(true);
       }
     };
 
     const handleStopTyping = ({ senderId }) => {
+      console.log("Stop typing event received from:", senderId);
+      console.log("Selected conversation:", selectedConversation?._id);
       if (selectedConversation?._id === senderId) {
-        setIsVisible(false);
-        // Delay the actual typing state change to allow for fade out animation
-        setTimeout(() => {
-          setIsTyping(false);
-        }, 500); // Match this with CSS transition duration
+        setIsTyping(false);
       }
     };
 
-    socket.on("typing", handleTyping);
-    socket.on("stopTyping", handleStopTyping);
+    if (socket) {
+      socket.on("typing", handleTyping);
+      socket.on("stopTyping", handleStopTyping);
 
-    return () => {
-      socket.off("typing", handleTyping);
-      socket.off("stopTyping", handleStopTyping);
-    };
+      return () => {
+        socket.off("typing", handleTyping);
+        socket.off("stopTyping", handleStopTyping);
+      };
+    }
   }, [socket, selectedConversation?._id]);
 
   // Reset typing state when conversation changes
   useEffect(() => {
-    setIsVisible(false);
-    setTimeout(() => {
-      setIsTyping(false);
-    }, 500);
+    setIsTyping(false);
   }, [selectedConversation]);
 
   useEffect(() => {
@@ -81,17 +76,13 @@ const Messages = () => {
       )}
 
       {isTyping && (
-        <div
-          ref={lastMessageRef}
-          className={`chat chat-start transition-all duration-500 ease-in-out ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-          }`}
-        >
+        <div ref={lastMessageRef} className="chat chat-start">
           <div className="chat-image avatar">
             <div className="w-10 rounded-full">
               <img
+                alt="Typing indicator"
                 src={selectedConversation?.profilePic}
-                alt={selectedConversation?.fullName}
+                className="bg-gray-600"
               />
             </div>
           </div>
@@ -102,7 +93,7 @@ const Messages = () => {
                 <div className="w-2 h-2 rounded-full bg-white animate-bounce [animation-delay:0.2s]"></div>
                 <div className="w-2 h-2 rounded-full bg-white animate-bounce [animation-delay:0.4s]"></div>
               </div>
-              <span className="text-sm">typing</span>
+              <span className="text-sm">typing...</span>
             </div>
           </div>
         </div>

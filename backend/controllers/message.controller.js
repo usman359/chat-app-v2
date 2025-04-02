@@ -1,4 +1,4 @@
-import Conversation from "../models/conersation.model.js";
+import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
 
@@ -33,19 +33,13 @@ export const sendMessage = async (req, res) => {
       conversation.messages.push(newMessage._id);
     }
 
-    // Save both the conversation and message first
-    await Promise.all([conversation.save(), newMessage.save()]);
-
-    // SOCKET IO FUNCTIONALITY
+    // io.to(<socketId>).emit() is used to emit events to a specific client
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
-      // Send the complete message object including timestamps
-      io.to(receiverSocketId).emit("newMessage", {
-        ...newMessage.toJSON(),
-        createdAt: newMessage.createdAt,
-        updatedAt: newMessage.updatedAt,
-      });
+      io.to(receiverSocketId).emit("newMessage", newMessage);
     }
+
+    await Promise.all([conversation.save(), newMessage.save()]);
 
     res.status(201).json(newMessage);
   } catch (error) {
@@ -63,11 +57,11 @@ export const getMessages = async (req, res) => {
       participants: { $all: [senderId, receiverId] },
     }).populate("messages");
 
-    if (!conversation) return res.status(200).json([]);
+    if (!conversation) return res.status(404).json([]);
 
     res.status(200).json(conversation.messages);
   } catch (error) {
-    console.log("Error in getMessages controller: ", error.message);
+    console.log("Error in getMessages controller", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };

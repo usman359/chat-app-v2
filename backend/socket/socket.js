@@ -12,64 +12,62 @@ const io = new Server(server, {
   },
 });
 
+const userSocketMap = {}; // socketId -> userId
+const activeUsers = {}; // userId -> socketId
+
 export const getReceiverSocketId = (receiverId) => {
-  return userSocketMap[receiverId];
+  return activeUsers[receiverId];
 };
-
-const userSocketMap = {};
-
-let onlineUsers = [];
 
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) {
-    userSocketMap[userId] = socket.id;
+    activeUsers[userId] = socket.id;
+    userSocketMap[socket.id] = userId;
   }
 
-  // io.emit() is used to emit events to all the clients
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  // Handle typing events
+  socket.on("typing", ({ receiverId }) => {
+    const receiverSocketId = activeUsers[receiverId];
+    if (receiverSocketId) {
+      // Send the actual userId as senderId
+      io.to(receiverSocketId).emit("typing", { senderId: userId });
+    }
+  });
 
-  // socket.on() is used to listen to the events. Can be used both on the server and client
+  socket.on("stopTyping", ({ receiverId }) => {
+    const receiverSocketId = activeUsers[receiverId];
+    if (receiverSocketId) {
+      // Send the actual userId as senderId
+      io.to(receiverSocketId).emit("stopTyping", { senderId: userId });
+    }
+  });
+
+  // io.emit() is used to emit events to all the clients
+  io.emit("getOnlineUsers", Object.keys(activeUsers));
+
   socket.on("disconnect", () => {
     console.log("user disconnected", socket.id);
-
-    // Remove user from userSocketMap
-    delete userSocketMap[userId];
-
-    // Emit updated online users list
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    if (userId) {
+      delete activeUsers[userId];
+      delete userSocketMap[socket.id];
+      io.emit("getOnlineUsers", Object.keys(activeUsers));
+    }
   });
 
   // Listen for when a user comes online
   socket.on("setup", (userId) => {
     socket.join(userId);
+    let onlineUsers = [];
     onlineUsers.push(userId);
     io.emit("onlineUsers", onlineUsers);
   });
 
-  // Listen for when a user starts typing
-  socket.on("typing", ({ recipientId, senderId }) => {
-    console.log("Typing:", { recipientId, senderId });
-    const recipientSocketId = userSocketMap[recipientId];
-    if (recipientSocketId) {
-      io.to(recipientSocketId).emit("typing", { senderId });
-    }
-  });
-
-  // Listen for when a user stops typing
-  socket.on("stopTyping", ({ recipientId, senderId }) => {
-    console.log("Stop Typing:", { recipientId, senderId });
-    const recipientSocketId = userSocketMap[recipientId];
-    if (recipientSocketId) {
-      io.to(recipientSocketId).emit("stopTyping", { senderId });
-    }
-  });
-
   // Listen for when a new message is sent
   socket.on("sendMessage", (message) => {
-    const recipientSocketId = userSocketMap[message.recipientId];
+    const recipientSocketId = activeUsers[message.recipientId];
     if (recipientSocketId) {
       socket.to(recipientSocketId).emit("newMessage", message);
     }
@@ -77,9 +75,10 @@ io.on("connection", (socket) => {
 
   // Listen for when a user disconnects
   socket.on("disconnect", () => {
+    let onlineUsers = [];
     onlineUsers = onlineUsers.filter((user) => user !== socket.id);
     io.emit("onlineUsers", onlineUsers);
   });
 });
 
-export { io, server, app };
+export { app, io, server };
