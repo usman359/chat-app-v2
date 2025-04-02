@@ -19,6 +19,11 @@ export const getReceiverSocketId = (receiverId) => {
   return activeUsers[receiverId];
 };
 
+// Function to broadcast new user to all connected clients
+export const broadcastNewUser = (newUser) => {
+  io.emit("newUser", newUser);
+};
+
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
 
@@ -26,13 +31,13 @@ io.on("connection", (socket) => {
   if (userId) {
     activeUsers[userId] = socket.id;
     userSocketMap[socket.id] = userId;
+    broadcastNewUser(userId); // Broadcast new user to all connected clients
   }
 
   // Handle typing events
   socket.on("typing", ({ receiverId }) => {
     const receiverSocketId = activeUsers[receiverId];
     if (receiverSocketId) {
-      // Send the actual userId as senderId
       io.to(receiverSocketId).emit("typing", { senderId: userId });
     }
   });
@@ -40,7 +45,6 @@ io.on("connection", (socket) => {
   socket.on("stopTyping", ({ receiverId }) => {
     const receiverSocketId = activeUsers[receiverId];
     if (receiverSocketId) {
-      // Send the actual userId as senderId
       io.to(receiverSocketId).emit("stopTyping", { senderId: userId });
     }
   });
