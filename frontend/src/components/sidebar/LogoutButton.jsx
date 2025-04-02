@@ -6,12 +6,14 @@ const LogoutButton = () => {
   const { logout, loading } = useLogout();
 
   return (
-    <div className="mt-auto">
+    <div className="mt-auto px-[8px] py-[18px] sm:py-[12px]">
       {!loading ? (
-        <LogOut
-          className="w-6 h-6 text-white cursor-pointer"
+        <button
           onClick={logout}
-        />
+          className="p-2 hover:bg-sky-500 rounded-full transition-colors"
+        >
+          <LogOut className="w-5 h-5 text-white" />
+        </button>
       ) : (
         <span className="loading loading-spinner"></span>
       )}

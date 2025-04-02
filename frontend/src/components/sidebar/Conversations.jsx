@@ -7,7 +7,7 @@ const Conversations = () => {
   const { loading, conversations } = useGetConversations();
 
   return (
-    <>
+    <div className="w-fit sm:w-auto">
       {!loading ? (
         <div className="py-2 flex flex-col overflow-auto">
           {conversations.map((conversation, idx) => (
@@ -22,7 +22,7 @@ const Conversations = () => {
       ) : (
         <div className="mx-auto flex items-center justify-center loading h-full loading-spinner"></div>
       )}
-    </>
+    </div>
   );
 };
 
